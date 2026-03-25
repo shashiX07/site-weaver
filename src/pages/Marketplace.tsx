@@ -1,35 +1,41 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import tp1 from "@/assets/template-preview-1.jpg";
-import tp2 from "@/assets/template-preview-2.jpg";
-import tp3 from "@/assets/template-preview-3.jpg";
-import tp4 from "@/assets/template-preview-4.jpg";
-import tp5 from "@/assets/template-preview-5.jpg";
-import tp6 from "@/assets/template-preview-6.jpg";
+import { getApprovedTemplates, createWebsite } from "@/lib/store";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
 const categories = ["All", "Business", "Portfolio", "Store", "Blog", "Food", "Health"];
-
-const templates = [
-  { name: "SaaS Landing", category: "Business", image: tp1 },
-  { name: "Dark Portfolio", category: "Portfolio", image: tp2 },
-  { name: "E-Commerce", category: "Store", image: tp3 },
-  { name: "Restaurant", category: "Food", image: tp4 },
-  { name: "Blog Editorial", category: "Blog", image: tp5 },
-  { name: "Fitness Pro", category: "Health", image: tp6 },
-];
 
 const Marketplace = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [search, setSearch] = useState("");
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
+  const templates = getApprovedTemplates();
   const filtered = templates.filter(
     (t) =>
       (activeCategory === "All" || t.category === activeCategory) &&
       t.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleUseTemplate = (templateId: string) => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    const result = createWebsite(templateId);
+    if (typeof result === "string") {
+      toast({ title: "Error", description: result, variant: "destructive" });
+    } else {
+      toast({ title: "Website created!", description: `"${result.name}" has been created from this template.` });
+      navigate(`/editor/${result.id}`);
+    }
+  };
 
   return (
     <DashboardLayout title="Template Marketplace">
@@ -56,11 +62,13 @@ const Marketplace = () => {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((template) => (
-            <div key={template.name} className="group overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:shadow-card-hover hover:border-primary/20">
+            <div key={template.id} className="group overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:shadow-card-hover hover:border-primary/20">
               <div className="relative aspect-[5/4] overflow-hidden">
                 <img src={template.image} alt={template.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" width={640} height={512} />
                 <div className="absolute inset-0 flex items-center justify-center bg-foreground/0 opacity-0 transition-all duration-300 group-hover:bg-foreground/40 group-hover:opacity-100">
-                  <Button size="sm" className="gradient-primary shadow-primary-glow">Use Template</Button>
+                  <Button size="sm" className="gradient-primary shadow-primary-glow" onClick={() => handleUseTemplate(template.id)}>
+                    Use Template
+                  </Button>
                 </div>
               </div>
               <div className="p-4">
@@ -68,6 +76,7 @@ const Marketplace = () => {
                   <h3 className="font-semibold text-foreground">{template.name}</h3>
                   <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{template.category}</span>
                 </div>
+                <p className="mt-1 text-xs text-muted-foreground">{template.downloads} downloads</p>
               </div>
             </div>
           ))}

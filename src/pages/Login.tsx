@@ -1,13 +1,32 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles, Mail, Lock, ArrowRight } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast({ title: "Error", description: "Please fill in all fields", variant: "destructive" });
+      return;
+    }
+    const error = login(email, password);
+    if (error) {
+      toast({ title: "Login failed", description: error, variant: "destructive" });
+    } else {
+      toast({ title: "Welcome back!", description: "You've been logged in successfully." });
+      navigate("/dashboard");
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
@@ -25,7 +44,7 @@ const Login = () => {
           <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
           <p className="mt-1 text-sm text-muted-foreground">Sign in to your account to continue</p>
 
-          <form className="mt-6 space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -40,17 +59,8 @@ const Login = () => {
                 <Input id="password" type="password" placeholder="••••••••" className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 text-muted-foreground">
-                <input type="checkbox" className="rounded border-input" />
-                Remember me
-              </label>
-              <a href="#" className="font-medium text-primary hover:underline">Forgot password?</a>
-            </div>
-            <Button className="w-full gradient-primary shadow-primary-glow" size="lg" asChild>
-              <Link to="/dashboard">
-                Sign in <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+            <Button type="submit" className="w-full gradient-primary shadow-primary-glow" size="lg">
+              Sign in <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </form>
 
