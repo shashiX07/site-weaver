@@ -20,14 +20,20 @@ const templates = [
 
 const TemplateShowcase = () => {
   return (
-    <section id="templates" className="py-24">
-      <div className="mx-auto max-w-7xl px-6">
+    <section id="templates" className="relative py-24 overflow-hidden">
+      {/* Background blobs */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-20 -right-20 h-[350px] w-[350px] rounded-full bg-primary/10 blur-[90px]" />
+        <div className="absolute bottom-20 -left-20 h-[300px] w-[300px] rounded-full bg-primary/8 blur-[80px]" />
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-6">
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-primary">Templates</p>
             <h2 className="mt-2 text-3xl font-bold text-foreground">Popular Templates</h2>
           </div>
-          <Button variant="outline" asChild>
+          <Button variant="outline" className="glass hover:bg-white/70" asChild>
             <Link to="/marketplace">
               View All Templates <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
@@ -42,7 +48,7 @@ const TemplateShowcase = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.08 }}
-              className="group cursor-pointer overflow-hidden rounded-2xl border border-border/50 bg-card transition-all duration-300 hover:shadow-card-hover hover:border-primary/20"
+              className="glass group cursor-pointer overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-lg hover:bg-white/70"
             >
               <div className="relative aspect-[5/4] overflow-hidden">
                 <img
@@ -62,7 +68,7 @@ const TemplateShowcase = () => {
               <div className="p-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-foreground">{template.name}</h3>
-                  <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                  <span className="glass rounded-full px-2.5 py-0.5 text-xs font-medium text-primary">
                     {template.category}
                   </span>
                 </div>

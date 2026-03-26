@@ -24,8 +24,14 @@ const steps = [
 
 const HowItWorksSection = () => {
   return (
-    <section id="how-it-works" className="bg-muted/50 py-24">
-      <div className="mx-auto max-w-7xl px-6">
+    <section id="how-it-works" className="relative py-24 overflow-hidden">
+      {/* Background blobs */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-0 left-1/4 h-[400px] w-[400px] rounded-full bg-primary/8 blur-[100px]" />
+        <div className="absolute bottom-0 right-1/3 h-[300px] w-[300px] rounded-full bg-primary/6 blur-[80px]" />
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">How It Works</p>
           <h2 className="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
@@ -41,7 +47,7 @@ const HowItWorksSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.15 }}
-              className="relative text-center"
+              className="glass relative rounded-2xl p-8 text-center transition-all duration-300 hover:shadow-lg hover:bg-white/70"
             >
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary shadow-primary-glow">
                 <step.icon className="h-7 w-7 text-primary-foreground" />
@@ -50,8 +56,8 @@ const HowItWorksSection = () => {
               <h3 className="mt-2 text-xl font-semibold text-foreground">{step.title}</h3>
               <p className="mt-3 text-sm text-muted-foreground">{step.description}</p>
               {i < steps.length - 1 && (
-                <div className="absolute right-0 top-8 hidden w-full -translate-x-1/2 md:block">
-                  <div className="mx-auto h-px w-24 bg-border" style={{ marginLeft: "calc(50% + 60px)" }} />
+                <div className="absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 md:block">
+                  <div className="h-px w-8 bg-border" />
                 </div>
               )}
             </motion.div>
