@@ -6,11 +6,13 @@ import editorMockup from "@/assets/editor-mockup.jpg";
 
 const HeroSection = () => {
   return (
-    <section className="relative overflow-hidden gradient-hero pt-32 pb-20 lg:pt-40 lg:pb-32">
-      {/* Background decorations */}
+    <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-32">
+      {/* Vibrant background blobs for glass effect */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full bg-primary/15 blur-[100px]" />
+        <div className="absolute top-1/2 -left-40 h-[400px] w-[400px] rounded-full bg-primary/10 blur-[80px]" />
+        <div className="absolute bottom-0 right-1/4 h-[300px] w-[300px] rounded-full bg-accent/20 blur-[80px]" />
+        <div className="absolute top-20 left-1/3 h-[200px] w-[200px] rounded-full bg-primary/8 blur-[60px]" />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6">
@@ -20,7 +22,7 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
+            <div className="glass mx-auto mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium text-primary shadow-sm">
               <Sparkle /> Now in Beta — Join 2,000+ creators
             </div>
           </motion.div>
@@ -57,7 +59,7 @@ const HeroSection = () => {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="px-8 text-base" asChild>
+            <Button size="lg" variant="outline" className="glass px-8 text-base hover:bg-white/70" asChild>
               <Link to="/marketplace">
                 <Play className="mr-2 h-4 w-4" />
                 Explore Templates
@@ -72,7 +74,7 @@ const HeroSection = () => {
           transition={{ duration: 0.8, delay: 0.5 }}
           className="mx-auto mt-16 max-w-5xl"
         >
-          <div className="relative rounded-2xl border border-border/50 bg-card p-2 shadow-xl">
+          <div className="glass relative rounded-2xl p-2 shadow-xl">
             <img
               src={editorMockup}
               alt="TemplatePro visual editor interface"

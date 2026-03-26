@@ -5,8 +5,14 @@ import { Link } from "react-router-dom";
 
 const FreelancerSection = () => {
   return (
-    <section id="freelancers" className="bg-muted/50 py-24">
-      <div className="mx-auto max-w-7xl px-6">
+    <section id="freelancers" className="relative py-24 overflow-hidden">
+      {/* Background blobs */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-10 left-1/4 h-[400px] w-[400px] rounded-full bg-primary/10 blur-[100px]" />
+        <div className="absolute bottom-10 right-10 h-[300px] w-[300px] rounded-full bg-primary/8 blur-[80px]" />
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-6">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -41,7 +47,7 @@ const FreelancerSection = () => {
               { icon: TrendingUp, title: "Track Analytics", desc: "Monitor your template performance and earnings." },
               { icon: DollarSign, title: "Fast Payouts", desc: "Receive your earnings with quick, reliable payouts." },
             ].map((item, i) => (
-              <div key={i} className="rounded-xl border border-border/50 bg-card p-5 shadow-card">
+              <div key={i} className="glass rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:bg-white/70">
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <item.icon className="h-5 w-5" />
                 </div>

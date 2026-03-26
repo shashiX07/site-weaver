@@ -7,10 +7,10 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass-strong">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary shadow-primary-glow">
             <Sparkles className="h-4 w-4 text-primary-foreground" />
           </div>
           <span className="text-lg font-bold text-foreground">TemplatePro</span>
@@ -38,7 +38,7 @@ const Navbar = () => {
       </div>
 
       {mobileOpen && (
-        <div className="border-t border-border bg-background px-6 py-4 md:hidden">
+        <div className="glass-strong px-6 py-4 md:hidden">
           <div className="flex flex-col gap-3">
             <a href="#features" className="text-sm font-medium text-muted-foreground" onClick={() => setMobileOpen(false)}>Features</a>
             <a href="#templates" className="text-sm font-medium text-muted-foreground" onClick={() => setMobileOpen(false)}>Templates</a>

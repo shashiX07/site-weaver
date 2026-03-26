@@ -26,8 +26,14 @@ const features = [
 
 const FeaturesSection = () => {
   return (
-    <section id="features" className="py-24">
-      <div className="mx-auto max-w-7xl px-6">
+    <section id="features" className="relative py-24">
+      {/* Background blobs */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute top-10 right-20 h-[300px] w-[300px] rounded-full bg-primary/8 blur-[80px]" />
+        <div className="absolute bottom-10 left-10 h-[250px] w-[250px] rounded-full bg-primary/6 blur-[70px]" />
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">Features</p>
           <h2 className="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
@@ -46,9 +52,9 @@ const FeaturesSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="group rounded-2xl border border-border/50 bg-card p-6 transition-all duration-300 hover:shadow-card-hover hover:border-primary/20"
+              className="glass group rounded-2xl p-6 transition-all duration-300 hover:shadow-lg hover:bg-white/70"
             >
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:gradient-primary group-hover:text-primary-foreground">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:gradient-primary group-hover:text-primary-foreground group-hover:shadow-primary-glow">
                 <feature.icon className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">{feature.title}</h3>
