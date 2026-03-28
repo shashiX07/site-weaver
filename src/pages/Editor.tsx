@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, Save, Eye, Globe, Undo, Redo, Monitor, Smartphone, Tablet,
-  Layers, Code, Sparkles, Menu, X,
+  Layers, Code, Sparkles, X,
 } from "lucide-react";
 import {
   getWebsiteById, updateWebsiteContent, updateWebsite, publishWebsite,
@@ -13,13 +13,16 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 
-import { EditorDocument, EditorNode, EditorMode } from "@/lib/editor/types";
+import {
+  EditorDocument, EditorNode, EditorMode,
+  isEditorText, isEditorElement, EditorElementNode,
+} from "@/lib/editor/types";
 import {
   findNode, updateNodeInTree, deleteNodeFromTree,
-  addChildToNode, moveNodeInTree, duplicateNodeInTree, genEditorId,
+  addChildToNode, moveNodeInTree, duplicateNodeInTree,
 } from "@/lib/editor/store";
-import { sectionsToEditorDocument, createBlankNode } from "@/lib/editor/templates";
-import RenderNode from "@/components/editor/RenderNode";
+import { loadTemplate, dummyTemplates, createBlankElement } from "@/lib/editor/templates";
+import EditorCanvas from "@/components/editor/EditorCanvas";
 import InspectorPanel from "@/components/editor/InspectorPanel";
 import PreviewFrame from "@/components/editor/PreviewFrame";
 import NodeTree from "@/components/editor/NodeTree";
@@ -46,6 +49,9 @@ const Editor = () => {
   const [showJsonPanel, setShowJsonPanel] = useState(false);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
+  // Template selector (when no website loaded)
+  const [templateIndex, setTemplateIndex] = useState(0);
+
   // History for undo/redo
   const [history, setHistory] = useState<EditorDocument[]>([]);
   const [historyIdx, setHistoryIdx] = useState(-1);
@@ -54,27 +60,45 @@ const Editor = () => {
     if (!user) navigate("/login");
   }, [user, navigate]);
 
-  // Load document from website sections
+  // Load document
   useEffect(() => {
+    let doc: EditorDocument;
+
     if (id) {
-      const w = getWebsiteById(id);
-      if (w) {
-        setWebsite(w);
-        const doc = sectionsToEditorDocument(w.content?.sections || [], w.name);
-        setEditorDoc(doc);
-        setHistory([doc]);
-        setHistoryIdx(0);
-        // Auto-expand root and first-level children
-        const expanded = new Set<string>(["root"]);
-        doc.layout.children?.forEach((c) => expanded.add(c.id));
-        setExpandedNodes(expanded);
+      // Try loading saved editor doc from localStorage
+      const savedKey = `tp_editor_doc_v2_${id}`;
+      const saved = localStorage.getItem(savedKey);
+      if (saved) {
+        try {
+          doc = JSON.parse(saved);
+        } catch {
+          doc = loadTemplate(0);
+        }
+      } else {
+        doc = loadTemplate(0);
       }
+      const w = getWebsiteById(id);
+      if (w) setWebsite(w);
+    } else {
+      doc = loadTemplate(templateIndex);
     }
-  }, [id]);
+
+    setEditorDoc(doc);
+    setHistory([doc]);
+    setHistoryIdx(0);
+
+    // Auto-expand root
+    const expanded = new Set<string>();
+    if (isEditorElement(doc.root)) {
+      expanded.add(doc.root._id);
+      (doc.root as EditorElementNode).children.forEach((c) => expanded.add(c._id));
+    }
+    setExpandedNodes(expanded);
+  }, [id, templateIndex]);
 
   const selectedNode = useMemo(() => {
     if (!editorDoc || !selectedNodeId) return null;
-    return findNode(editorDoc.layout, selectedNodeId);
+    return findNode(editorDoc.root, selectedNodeId);
   }, [editorDoc, selectedNodeId]);
 
   const pushHistory = useCallback((newDoc: EditorDocument) => {
@@ -114,35 +138,35 @@ const Editor = () => {
   // Core operations
   const handleUpdateNode = useCallback((nodeId: string, updates: Partial<EditorNode>) => {
     if (!editorDoc) return;
-    const newLayout = updateNodeInTree(editorDoc.layout, nodeId, updates);
-    updateDoc({ ...editorDoc, layout: newLayout });
+    const newRoot = updateNodeInTree(editorDoc.root, nodeId, updates);
+    updateDoc({ ...editorDoc, root: newRoot });
   }, [editorDoc, updateDoc]);
 
   const handleDeleteNode = useCallback((nodeId: string) => {
-    if (!editorDoc || nodeId === "root") return;
-    const newLayout = deleteNodeFromTree(editorDoc.layout, nodeId);
-    updateDoc({ ...editorDoc, layout: newLayout });
+    if (!editorDoc || nodeId === editorDoc.root._id) return;
+    const newRoot = deleteNodeFromTree(editorDoc.root, nodeId);
+    updateDoc({ ...editorDoc, root: newRoot });
     if (selectedNodeId === nodeId) setSelectedNodeId(null);
   }, [editorDoc, updateDoc, selectedNodeId]);
 
   const handleDuplicateNode = useCallback((nodeId: string) => {
-    if (!editorDoc || nodeId === "root") return;
-    const newLayout = duplicateNodeInTree(editorDoc.layout, nodeId, genEditorId);
-    updateDoc({ ...editorDoc, layout: newLayout });
+    if (!editorDoc || nodeId === editorDoc.root._id) return;
+    const newRoot = duplicateNodeInTree(editorDoc.root, nodeId);
+    updateDoc({ ...editorDoc, root: newRoot });
   }, [editorDoc, updateDoc]);
 
   const handleMoveNode = useCallback((nodeId: string, direction: "up" | "down") => {
     if (!editorDoc) return;
-    const newLayout = moveNodeInTree(editorDoc.layout, nodeId, direction);
-    updateDoc({ ...editorDoc, layout: newLayout });
+    const newRoot = moveNodeInTree(editorDoc.root, nodeId, direction);
+    updateDoc({ ...editorDoc, root: newRoot });
   }, [editorDoc, updateDoc]);
 
-  const handleAddChild = useCallback((parentId: string, type: EditorNode["type"]) => {
+  const handleAddChild = useCallback((parentId: string, tag: string) => {
     if (!editorDoc) return;
-    const newNode = createBlankNode(type);
-    const newLayout = addChildToNode(editorDoc.layout, parentId, newNode);
-    updateDoc({ ...editorDoc, layout: newLayout });
-    setSelectedNodeId(newNode.id);
+    const newNode = createBlankElement(tag);
+    const newRoot = addChildToNode(editorDoc.root, parentId, newNode);
+    updateDoc({ ...editorDoc, root: newRoot });
+    setSelectedNodeId(newNode._id);
     setExpandedNodes((prev) => new Set([...prev, parentId]));
   }, [editorDoc, updateDoc]);
 
@@ -157,11 +181,10 @@ const Editor = () => {
 
   // Save & Publish
   const handleSave = () => {
-    if (id && website && editorDoc) {
-      // Save the editor doc as a JSON blob in localStorage alongside sections
-      const key = `tp_editor_doc_${id}`;
+    if (id && editorDoc) {
+      const key = `tp_editor_doc_v2_${id}`;
       localStorage.setItem(key, JSON.stringify(editorDoc));
-      updateWebsiteContent(id, website.content);
+      if (website) updateWebsiteContent(id, website.content);
       setHasChanges(false);
       toast({ title: "Saved!", description: "Your changes have been saved." });
     }
@@ -169,7 +192,7 @@ const Editor = () => {
 
   const handlePublish = () => {
     if (id && website && editorDoc) {
-      const key = `tp_editor_doc_${id}`;
+      const key = `tp_editor_doc_v2_${id}`;
       localStorage.setItem(key, JSON.stringify(editorDoc));
       updateWebsiteContent(id, website.content);
       publishWebsite(id);
@@ -185,27 +208,14 @@ const Editor = () => {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") { e.preventDefault(); handleSave(); }
       if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
       if ((e.metaKey || e.ctrlKey) && e.key === "z" && e.shiftKey) { e.preventDefault(); redo(); }
-      if (e.key === "Escape") setMode("editor");
-      if (e.key === "Delete" && selectedNodeId && selectedNodeId !== "root") handleDeleteNode(selectedNodeId);
+      if (e.key === "Escape") { setMode("editor"); setSelectedNodeId(null); }
+      if (e.key === "Delete" && selectedNodeId && editorDoc && selectedNodeId !== editorDoc.root._id) {
+        handleDeleteNode(selectedNodeId);
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   });
-
-  const handleUpdateStyles = (newStyles: string) => {
-    if (!editorDoc) return;
-    updateDoc({ ...editorDoc, styles: newStyles });
-  };
-
-  const handleUpdateScripts = (newScripts: string) => {
-    if (!editorDoc) return;
-    try {
-      const arr = newScripts.split("\n---\n");
-      updateDoc({ ...editorDoc, scripts: arr });
-    } catch {
-      // ignore parse errors
-    }
-  };
 
   if (!editorDoc) {
     return (
@@ -238,16 +248,35 @@ const Editor = () => {
               {v === "mobile" && <Smartphone className="h-3.5 w-3.5" />}
             </Button>
           ))}
+          {/* Template switcher (when no website ID) */}
+          {!id && (
+            <>
+              <div className="h-4 w-px bg-border" />
+              <select
+                className="rounded border border-input bg-background px-2 py-1 text-xs"
+                value={templateIndex}
+                onChange={(e) => {
+                  setTemplateIndex(Number(e.target.value));
+                  setSelectedNodeId(null);
+                }}
+              >
+                {dummyTemplates.map((t, i) => (
+                  <option key={i} value={i}>{t.name}</option>
+                ))}
+              </select>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          <span className="text-sm font-semibold text-foreground">{website?.name || "Editor"}</span>
+          <span className="text-sm font-semibold text-foreground">
+            {website?.name || dummyTemplates[templateIndex]?.name || "Editor"}
+          </span>
           {hasChanges && <span className="h-2 w-2 rounded-full bg-orange-400" />}
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Mode toggle */}
           <div className="flex rounded-lg border border-border overflow-hidden">
             <button
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${mode === "editor" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
@@ -266,12 +295,16 @@ const Editor = () => {
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowJsonPanel(!showJsonPanel)} title="View JSON">
             <Code className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleSave} disabled={!hasChanges}>
-            <Save className="mr-1.5 h-3 w-3" /> Save
-          </Button>
-          <Button size="sm" className="h-7 text-xs" onClick={handlePublish}>
-            <Globe className="mr-1.5 h-3 w-3" /> Publish
-          </Button>
+          {id && (
+            <>
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleSave} disabled={!hasChanges}>
+                <Save className="mr-1.5 h-3 w-3" /> Save
+              </Button>
+              <Button size="sm" className="h-7 text-xs" onClick={handlePublish}>
+                <Globe className="mr-1.5 h-3 w-3" /> Publish
+              </Button>
+            </>
+          )}
         </div>
       </header>
 
@@ -286,7 +319,7 @@ const Editor = () => {
             </div>
             <div className="flex-1 overflow-auto py-1 px-1">
               <NodeTree
-                node={editorDoc.layout}
+                node={editorDoc.root}
                 selectedNodeId={selectedNodeId}
                 onSelectNode={setSelectedNodeId}
                 expandedNodes={expandedNodes}
@@ -297,10 +330,7 @@ const Editor = () => {
         )}
 
         {/* Center - Canvas or Preview */}
-        <div
-          className="flex flex-1 flex-col items-center overflow-auto bg-muted/50 p-4 lg:p-6"
-          onClick={() => mode === "editor" && setSelectedNodeId(null)}
-        >
+        <div className="flex flex-1 flex-col items-center overflow-auto bg-muted/50 p-4 lg:p-6">
           {mode === "preview" ? (
             <div
               className="w-full rounded-xl border border-border bg-white shadow-lg overflow-hidden transition-all duration-300 flex-1"
@@ -310,7 +340,7 @@ const Editor = () => {
             </div>
           ) : (
             <div
-              className="w-full rounded-xl border border-border bg-white shadow-lg overflow-hidden transition-all duration-300"
+              className="w-full rounded-xl border border-border bg-white shadow-lg overflow-hidden transition-all duration-300 flex-1"
               style={{ maxWidth: viewportWidths[viewport] }}
             >
               {/* Browser chrome */}
@@ -319,17 +349,16 @@ const Editor = () => {
                 <div className="h-2 w-2 rounded-full bg-orange-400/40" />
                 <div className="h-2 w-2 rounded-full bg-green-400/40" />
                 <div className="ml-2 flex-1 rounded bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                  {website?.url || "yoursite.templatepro.com"}
+                  {website?.url || "template-preview.local"}
                 </div>
               </div>
-              {/* Canvas */}
-              <div className="min-h-[400px]">
-                <RenderNode
-                  node={editorDoc.layout}
-                  selectedNodeId={selectedNodeId}
-                  onSelectNode={setSelectedNodeId}
-                />
-              </div>
+              {/* Iframe canvas — fully isolated */}
+              <EditorCanvas
+                document={editorDoc}
+                selectedNodeId={selectedNodeId}
+                onSelectNode={setSelectedNodeId}
+                className="w-full min-h-[500px]"
+              />
             </div>
           )}
         </div>
@@ -345,7 +374,6 @@ const Editor = () => {
               onMoveNode={handleMoveNode}
               onAddChild={handleAddChild}
             />
-            {/* Website info */}
             {website && (
               <div className="border-t border-border p-3 space-y-2">
                 <div className="space-y-1">
@@ -385,13 +413,7 @@ const Editor = () => {
               <textarea
                 className="w-full rounded border border-input bg-muted/50 p-2 text-[11px] font-mono text-foreground min-h-[80px] resize-y"
                 value={editorDoc.styles}
-                onChange={(e) => handleUpdateStyles(e.target.value)}
-              />
-              <Label className="text-xs font-bold">Scripts (separated by ---)</Label>
-              <textarea
-                className="w-full rounded border border-input bg-muted/50 p-2 text-[11px] font-mono text-foreground min-h-[60px] resize-y"
-                value={editorDoc.scripts.join("\n---\n")}
-                onChange={(e) => handleUpdateScripts(e.target.value)}
+                onChange={(e) => updateDoc({ ...editorDoc, styles: e.target.value })}
               />
             </div>
           </div>

@@ -1,21 +1,21 @@
-// Preview iframe that renders HTML + CSS + JS in a sandboxed environment
+// Preview iframe — renders full HTML + CSS + JS in a sandboxed environment
 import React, { useEffect, useRef } from "react";
 import { EditorDocument } from "@/lib/editor/types";
-import { layoutToHtml } from "@/lib/editor/store";
+import { editorNodeToHtml } from "@/lib/editor/store";
 
 interface PreviewFrameProps {
   document: EditorDocument;
   className?: string;
 }
 
-const PreviewFrame: React.FC<PreviewFrameProps> = ({ document, className }) => {
+const PreviewFrame: React.FC<PreviewFrameProps> = ({ document: doc, className }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (!iframeRef.current) return;
 
-    const html = layoutToHtml(document.layout);
-    const scripts = document.scripts.map((s) => `<script>${s}<\/script>`).join("\n");
+    const html = editorNodeToHtml(doc.root);
+    const scripts = doc.scripts.map((s) => `<script>${s}<\/script>`).join("\n");
 
     const fullHtml = `<!DOCTYPE html>
 <html>
@@ -23,9 +23,7 @@ const PreviewFrame: React.FC<PreviewFrameProps> = ({ document, className }) => {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <style>
-    ${document.styles}
-  </style>
+  <style>${doc.styles}</style>
 </head>
 <body>
   ${html}
@@ -38,7 +36,7 @@ const PreviewFrame: React.FC<PreviewFrameProps> = ({ document, className }) => {
     iframeRef.current.src = url;
 
     return () => URL.revokeObjectURL(url);
-  }, [document]);
+  }, [doc]);
 
   return (
     <iframe

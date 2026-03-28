@@ -1,7 +1,7 @@
-// Node tree panel showing the JSON hierarchy
+// Node tree panel showing the JSON hierarchy (new payload schema)
 import React from "react";
-import { EditorNode } from "@/lib/editor/types";
-import { ChevronRight, ChevronDown, Box, Type, Image, Link, MousePointer2 } from "lucide-react";
+import { EditorNode, isEditorText, isEditorElement } from "@/lib/editor/types";
+import { ChevronRight, ChevronDown, Box, Type } from "lucide-react";
 
 interface NodeTreeProps {
   node: EditorNode;
@@ -12,14 +12,6 @@ interface NodeTreeProps {
   onToggleExpand: (id: string) => void;
 }
 
-const typeIcons: Record<string, React.ElementType> = {
-  container: Box,
-  text: Type,
-  image: Image,
-  link: Link,
-  button: MousePointer2,
-};
-
 const NodeTree: React.FC<NodeTreeProps> = ({
   node,
   selectedNodeId,
@@ -28,14 +20,36 @@ const NodeTree: React.FC<NodeTreeProps> = ({
   expandedNodes,
   onToggleExpand,
 }) => {
-  const hasChildren = node.children && node.children.length > 0;
-  const isExpanded = expandedNodes.has(node.id);
-  const isSelected = selectedNodeId === node.id;
-  const Icon = typeIcons[node.type] || Box;
+  const isSelected = selectedNodeId === node._id;
 
-  const displayLabel = node.type === "text"
-    ? (node.content || "").slice(0, 20) + ((node.content || "").length > 20 ? "…" : "")
-    : node.attributes?.class || node.tag || node.type;
+  // Text node
+  if (isEditorText(node)) {
+    const preview = node.text.length > 25 ? node.text.slice(0, 25) + "…" : node.text;
+    return (
+      <div
+        className={`flex items-center gap-1 cursor-pointer rounded-md px-1.5 py-1 text-[11px] transition-colors ${
+          isSelected
+            ? "bg-primary/10 text-primary font-medium"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        }`}
+        style={{ paddingLeft: `${depth * 12 + 4}px` }}
+        onClick={() => onSelectNode(node._id)}
+      >
+        <span className="w-3" />
+        <Type className="h-3 w-3 flex-shrink-0 opacity-60" />
+        <span className="truncate italic opacity-70">"{preview}"</span>
+      </div>
+    );
+  }
+
+  // Element node
+  const el = node;
+  if (!isEditorElement(el)) return null;
+
+  const hasChildren = el.children && el.children.length > 0;
+  const isExpanded = expandedNodes.has(el._id);
+  const classAttr = el.attributes.class;
+  const classStr = Array.isArray(classAttr) ? classAttr.join(" ") : classAttr || "";
 
   return (
     <div>
@@ -46,14 +60,14 @@ const NodeTree: React.FC<NodeTreeProps> = ({
             : "text-muted-foreground hover:bg-muted hover:text-foreground"
         }`}
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
-        onClick={() => onSelectNode(node.id)}
+        onClick={() => onSelectNode(el._id)}
       >
         {hasChildren ? (
           <button
             className="p-0 hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
-              onToggleExpand(node.id);
+              onToggleExpand(el._id);
             }}
           >
             {isExpanded ? (
@@ -65,19 +79,19 @@ const NodeTree: React.FC<NodeTreeProps> = ({
         ) : (
           <span className="w-3" />
         )}
-        <Icon className="h-3 w-3 flex-shrink-0 opacity-60" />
-        <span className="truncate">{`<${node.tag || node.type}>`}</span>
-        {node.type === "text" && node.content && (
-          <span className="truncate text-muted-foreground/50 ml-1 italic">
-            {displayLabel}
+        <Box className="h-3 w-3 flex-shrink-0 opacity-60" />
+        <span className="truncate font-mono">{`<${el.tag}>`}</span>
+        {classStr && (
+          <span className="truncate text-muted-foreground/50 ml-1 text-[10px]">
+            .{classStr.split(" ")[0]}
           </span>
         )}
       </div>
       {hasChildren && isExpanded && (
         <div>
-          {node.children!.map((child) => (
+          {el.children.map((child) => (
             <NodeTree
-              key={child.id}
+              key={child._id}
               node={child}
               selectedNodeId={selectedNodeId}
               onSelectNode={onSelectNode}
